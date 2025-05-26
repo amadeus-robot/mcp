@@ -1,4 +1,4 @@
-defmodule JsonrpcServer.Tools do
+defmodule MCPServer.Toolsi do
   require Logger
 
   def get_tools_list() do

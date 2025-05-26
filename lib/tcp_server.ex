@@ -1,4 +1,4 @@
-defmodule JsonrpcServer.TcpServer do
+defmodule MCPServer.TcpServer do
   use GenServer
   require Logger
 
@@ -162,11 +162,11 @@ defmodule JsonrpcServer.TcpServer do
   end
 
   def dispatch_method("tools/list", params) do
-    {:ok, JsonrpcServer.Tools.get_tools_list()}
+    {:ok, MCPServer.Tools.get_tools_list()}
   end
 
   def dispatch_method("tools/call", params) do
-    JsonrpcServer.Tools.dispatch_tool_call(params)
+    MCPServer.Tools.dispatch_tool_call(params)
   end
 
   def dispatch_method(method, _params) do
@@ -185,6 +185,6 @@ defmodule JsonrpcServer.TcpServer do
   end
 
   def test() do
-    JsonrpcServer.Tools.test()
+    MCPServer.Tools.test()
   end
 end
