@@ -58,15 +58,14 @@ defmodule MCPServer.ToolRegistry do
   end
 
   @doc "Auto-discover and register tools from modules"
-  def discover_tools(module_prefix \\ MCPServer.Tools) do
+  def discover_tools() do
     :code.all_loaded()
     |> Enum.map(fn {module, _} -> module end)
     |> Enum.filter(&tool_module?/1)
-    |> Enum.filter(&String.starts_with?(Atom.to_string(&1), Atom.to_string(module_prefix)))
     |> Enum.each(&register_tool/1)
   end
 
-  defp tool_module?(module) do
+  def tool_module?(module) do
     try do
       module.module_info(:attributes)
       |> Keyword.get(:behaviour, [])
