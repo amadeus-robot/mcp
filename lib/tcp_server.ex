@@ -24,7 +24,7 @@ defmodule MCPServer.TcpServer do
     {:ok, %{listen_socket: listen_socket, port: port}}
   end
 
-  defp accept_loop(listen_socket) do
+  def accept_loop(listen_socket) do
     case :gen_tcp.accept(listen_socket) do
       {:ok, client_socket} ->
         Logger.info("New client connected")
@@ -33,11 +33,11 @@ defmodule MCPServer.TcpServer do
         spawn(fn -> __MODULE__.handle_client(client_socket) end)
 
         # Continue accepting new connections
-        accept_loop(listen_socket)
+        __MODULE__.accept_loop(listen_socket)
 
       {:error, reason} ->
         Logger.error("Failed to accept connection: #{inspect(reason)}")
-        accept_loop(listen_socket)
+        __MODULE__.accept_loop(listen_socket)
     end
   end
 
@@ -48,10 +48,10 @@ defmodule MCPServer.TcpServer do
 
         json_data = rest <> data
 
-        case Jason.decode(json_data) do
+        case JSX.decode(json_data) do
           {:ok, request} ->
             response = __MODULE__.handle_jsonrpc_request(request)
-            response_json = Jason.encode!(response) <> "\n"
+            response_json = JSX.encode!(response) <> "\n"
 
             :gen_tcp.send(socket, response_json)
 

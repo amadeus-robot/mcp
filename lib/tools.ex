@@ -434,7 +434,7 @@ defmodule MCPServer.Toolsi do
     try do
       case File.stat(path) do
         {:ok, %{type: :directory}} ->
-          files = 
+          files =
             if recursive do
               list_files_recursive(path, show_hidden)
             else
@@ -463,6 +463,7 @@ defmodule MCPServer.Toolsi do
         |> Enum.filter(fn file -> show_hidden || !String.starts_with?(file, ".") end)
         |> Enum.map(fn file ->
           full_path = Path.join(path, file)
+
           case File.stat(full_path) do
             {:ok, stat} -> {file, stat.type, stat.size}
             {:error, _} -> {file, :unknown, 0}
@@ -483,12 +484,14 @@ defmodule MCPServer.Toolsi do
       |> Enum.flat_map(fn file ->
         full_path = Path.join(path, file)
         relative_path = Path.relative_to(full_path, ".")
-        
+
         case File.stat(full_path) do
           {:ok, %{type: :directory}} ->
             [{relative_path, :directory, 0} | list_files_recursive(full_path, show_hidden)]
+
           {:ok, stat} ->
             [{relative_path, stat.type, stat.size}]
+
           {:error, _} ->
             [{relative_path, :unknown, 0}]
         end
@@ -504,13 +507,14 @@ defmodule MCPServer.Toolsi do
     else
       files
       |> Enum.map(fn {name, type, size} ->
-        type_indicator = case type do
-          :directory -> "d"
-          :regular -> "f"
-          :symlink -> "l"
-          _ -> "?"
-        end
-        
+        type_indicator =
+          case type do
+            :directory -> "d"
+            :regular -> "f"
+            :symlink -> "l"
+            _ -> "?"
+          end
+
         size_str = if type == :directory, do: "", else: " (#{format_size(size)})"
         "#{type_indicator} #{name}#{size_str}"
       end)
@@ -520,7 +524,10 @@ defmodule MCPServer.Toolsi do
 
   defp format_size(size) when size < 1024, do: "#{size}B"
   defp format_size(size) when size < 1024 * 1024, do: "#{Float.round(size / 1024, 1)}KB"
-  defp format_size(size) when size < 1024 * 1024 * 1024, do: "#{Float.round(size / (1024 * 1024), 1)}MB"
+
+  defp format_size(size) when size < 1024 * 1024 * 1024,
+    do: "#{Float.round(size / (1024 * 1024), 1)}MB"
+
   defp format_size(size), do: "#{Float.round(size / (1024 * 1024 * 1024), 1)}GB"
 
   def handle_fs_read(args) do
@@ -539,6 +546,7 @@ defmodule MCPServer.Toolsi do
       |> Enum.map(fn
         {:ok, file_path, content} ->
           "=== #{file_path} ===\n#{content}"
+
         {:error, file_path, reason} ->
           "=== #{file_path} (ERROR) ===\nError: #{reason}"
       end)
@@ -551,13 +559,15 @@ defmodule MCPServer.Toolsi do
         {:error, _, _}, {succ, err} -> {succ, err + 1}
       end)
 
-    summary = "Read #{length(file_paths)} files: #{success_count} successful, #{error_count} failed"
-    
-    full_text = if Enum.empty?(formatted_results) do
-      summary
-    else
-      "#{summary}\n\n#{formatted_results}"
-    end
+    summary =
+      "Read #{length(file_paths)} files: #{success_count} successful, #{error_count} failed"
+
+    full_text =
+      if Enum.empty?(formatted_results) do
+        summary
+      else
+        "#{summary}\n\n#{formatted_results}"
+      end
 
     {:ok, create_text_response(full_text)}
   end
@@ -572,16 +582,21 @@ defmodule MCPServer.Toolsi do
             case File.read(file_path) do
               {:ok, content} ->
                 # Convert encoding if needed
-                final_content = case encoding do
-                  :utf8 -> 
-                    case :unicode.characters_to_binary(content, :utf8) do
-                      utf8_content when is_binary(utf8_content) -> utf8_content
-                      {:error, _, _} -> "(binary content - not valid UTF-8)"
-                      {:incomplete, _, _} -> "(binary content - incomplete UTF-8)"
-                    end
-                  _ -> content
-                end
+                final_content =
+                  case encoding do
+                    :utf8 ->
+                      case :unicode.characters_to_binary(content, :utf8) do
+                        utf8_content when is_binary(utf8_content) -> utf8_content
+                        {:error, _, _} -> "(binary content - not valid UTF-8)"
+                        {:incomplete, _, _} -> "(binary content - incomplete UTF-8)"
+                      end
+
+                    _ ->
+                      content
+                  end
+
                 {:ok, file_path, final_content}
+
               {:error, reason} ->
                 {:error, file_path, inspect(reason)}
             end
@@ -709,14 +724,17 @@ defmodule MCPServer.Toolsi do
   def handle_hfm_create_layer(%{"parent_layer_id" => parent_layer_id}) do
     case HierarchicalFunctionManager.create_layer(HierarchicalFunctionManager, parent_layer_id) do
       {:ok, layer_id} ->
-        {:ok, create_text_response("Created new layer #{layer_id} with parent #{parent_layer_id}")}
+        {:ok,
+         create_text_response("Created new layer #{layer_id} with parent #{parent_layer_id}")}
 
       {:error, reason} ->
         {:ok, create_text_response("Error creating layer: #{inspect(reason)}")}
     end
   end
 
-  def handle_hfm_store_module_declarations(%{"module_name" => module_name, "declarations" => declarations} = args) do
+  def handle_hfm_store_module_declarations(
+        %{"module_name" => module_name, "declarations" => declarations} = args
+      ) do
     metadata = Map.get(args, "metadata", %{})
     layer_id = Map.get(args, "layer_id", :head)
 
@@ -728,7 +746,10 @@ defmodule MCPServer.Toolsi do
            layer_id
          ) do
       {:ok, identifiers} ->
-        {:ok, create_text_response("Stored module declarations for #{module_name}: #{inspect(identifiers)}")}
+        {:ok,
+         create_text_response(
+           "Stored module declarations for #{module_name}: #{inspect(identifiers)}"
+         )}
 
       {:error, reason} ->
         {:ok, create_text_response("Error storing module declarations: #{inspect(reason)}")}
@@ -744,14 +765,19 @@ defmodule MCPServer.Toolsi do
            layer_id
          ) do
       {:ok, {declarations, metadata, found_layer_id}} ->
-        {:ok, create_text_response("Module declarations for #{module_name} (found in layer #{found_layer_id}):\nDeclarations: #{inspect(declarations, pretty: true)}\nMetadata: #{inspect(metadata, pretty: true)}")}
+        {:ok,
+         create_text_response(
+           "Module declarations for #{module_name} (found in layer #{found_layer_id}):\nDeclarations: #{inspect(declarations, pretty: true)}\nMetadata: #{inspect(metadata, pretty: true)}"
+         )}
 
       {:error, :not_found} ->
         {:ok, create_text_response("Module declarations not found for #{module_name}")}
     end
   end
 
-  def handle_hfm_store_function(%{"module_name" => module_name, "function_name" => function_name, "code" => code} = args) do
+  def handle_hfm_store_function(
+        %{"module_name" => module_name, "function_name" => function_name, "code" => code} = args
+      ) do
     metadata = Map.get(args, "metadata", %{})
     layer_id = Map.get(args, "layer_id", :head)
 
@@ -764,14 +790,19 @@ defmodule MCPServer.Toolsi do
            layer_id
          ) do
       {:ok, function_names} ->
-        {:ok, create_text_response("Stored function #{module_name}.#{function_name}: #{inspect(function_names)}")}
+        {:ok,
+         create_text_response(
+           "Stored function #{module_name}.#{function_name}: #{inspect(function_names)}"
+         )}
 
       {:error, reason} ->
         {:ok, create_text_response("Error storing function: #{inspect(reason)}")}
     end
   end
 
-  def handle_hfm_get_function(%{"module_name" => module_name, "function_name" => function_name} = args) do
+  def handle_hfm_get_function(
+        %{"module_name" => module_name, "function_name" => function_name} = args
+      ) do
     layer_id = Map.get(args, "layer_id", :head)
 
     case HierarchicalFunctionManager.get_function(
@@ -781,7 +812,10 @@ defmodule MCPServer.Toolsi do
            layer_id
          ) do
       {:ok, {code, metadata, found_layer_id}} ->
-        {:ok, create_text_response("Function #{module_name}.#{function_name} (found in layer #{found_layer_id}):\n#{code}\n\nMetadata: #{inspect(metadata, pretty: true)}")}
+        {:ok,
+         create_text_response(
+           "Function #{module_name}.#{function_name} (found in layer #{found_layer_id}):\n#{code}\n\nMetadata: #{inspect(metadata, pretty: true)}"
+         )}
 
       {:error, :not_found} ->
         {:ok, create_text_response("Function #{module_name}.#{function_name} not found")}
@@ -828,7 +862,10 @@ defmodule MCPServer.Toolsi do
 
     functions = HierarchicalFunctionManager.list_functions(HierarchicalFunctionManager, layer_id)
 
-    {:ok, create_text_response("Functions visible from layer #{layer_id}:\n#{inspect(functions, pretty: true)}")}
+    {:ok,
+     create_text_response(
+       "Functions visible from layer #{layer_id}:\n#{inspect(functions, pretty: true)}"
+     )}
   end
 
   def handle_hfm_list_module_declarations(args) do
@@ -837,7 +874,10 @@ defmodule MCPServer.Toolsi do
     declarations =
       HierarchicalFunctionManager.list_module_declarations(HierarchicalFunctionManager, layer_id)
 
-    {:ok, create_text_response("Module declarations visible from layer #{layer_id}:\n#{inspect(declarations, pretty: true)}")}
+    {:ok,
+     create_text_response(
+       "Module declarations visible from layer #{layer_id}:\n#{inspect(declarations, pretty: true)}"
+     )}
   end
 
   def handle_hfm_get_layer_chain(args) do
@@ -860,7 +900,9 @@ defmodule MCPServer.Toolsi do
     {:ok, create_text_response("All layers (head to root): #{inspect(layers)}")}
   end
 
-  def handle_hfm_delete_function(%{"module_name" => module_name, "function_name" => function_name} = args) do
+  def handle_hfm_delete_function(
+        %{"module_name" => module_name, "function_name" => function_name} = args
+      ) do
     layer_id = Map.get(args, "layer_id", :head)
 
     case HierarchicalFunctionManager.delete_function(
@@ -870,7 +912,10 @@ defmodule MCPServer.Toolsi do
            layer_id
          ) do
       :ok ->
-        {:ok, create_text_response("Deleted function #{module_name}.#{function_name} from layer #{layer_id}")}
+        {:ok,
+         create_text_response(
+           "Deleted function #{module_name}.#{function_name} from layer #{layer_id}"
+         )}
 
       {:error, reason} ->
         {:ok, create_text_response("Error deleting function: #{inspect(reason)}")}
@@ -886,7 +931,10 @@ defmodule MCPServer.Toolsi do
            layer_id
          ) do
       :ok ->
-        {:ok, create_text_response("Deleted module declarations for #{module_name} from layer #{layer_id}")}
+        {:ok,
+         create_text_response(
+           "Deleted module declarations for #{module_name} from layer #{layer_id}"
+         )}
 
       {:error, reason} ->
         {:ok, create_text_response("Error deleting module declarations: #{inspect(reason)}")}
@@ -904,7 +952,10 @@ defmodule MCPServer.Toolsi do
 
     case HierarchicalFunctionManager.compact_layer(layer_id) do
       {:ok, compacted_count} ->
-        {:ok, create_text_response("Compacted layer #{layer_id}, removed #{compacted_count} redundant functions")}
+        {:ok,
+         create_text_response(
+           "Compacted layer #{layer_id}, removed #{compacted_count} redundant functions"
+         )}
 
       {:error, reason} ->
         {:ok, create_text_response("Error compacting layer: #{inspect(reason)}")}
@@ -960,7 +1011,10 @@ defmodule MCPServer.Toolsi do
     declarations = [%{"name" => "value"}]
 
     {:ok, res} =
-      handle_hfm_store_module_declarations(%{"module_name" => module_name, "declarations" => declarations})
+      handle_hfm_store_module_declarations(%{
+        "module_name" => module_name,
+        "declarations" => declarations
+      })
 
     %{
       "content" => [
