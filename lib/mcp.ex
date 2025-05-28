@@ -39,6 +39,7 @@ defmodule MCPServer do
         spawn(fn ->
           # Give registry time to start
           :timer.sleep(100)
+          ModuleLoader.load_namespace("MCPServer.Tools.")
           MCPServer.ToolRegistry.discover_tools()
           Logger.info("Tool discovery completed")
         end)
